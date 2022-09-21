@@ -91,8 +91,25 @@ public:
     {
         delete A;
     }
+};
 
-}
+class FE_Evolution : public TimeDependentOperator
+{
+private:
+    OperatorHandle M, K;
+    const Vector &b;
+    DG_Solver *dg_solver;
+
+    mutable Vector z;
+
+public:
+    FE_Evolution(ParBilinearForm &M_, ParBilinearForm &K_, const Vector &b_);
+
+    virtual void Mult(const Vector &x, Vector &y) const;
+    virtual void ImplicitSolve(const double dt, const Vector &x, const Vector &k);
+
+    virtual ~FE_Evoltuion();    
+};
 
 //////// START MAIN /////////
 int main(int argc, char *argv[])
