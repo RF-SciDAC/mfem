@@ -189,6 +189,7 @@ int main(int argc, char *argv[])
     const char *mesh_file = "~/Documents/git-repos/RF-SciDAC/mfem-analysis/1D_tests/linear-hyp/slab_128.mesh";
     int ser_ref_levels = 0;
     int par_ref_levels = 0;
+    int order = 2;
 #if MFEM_HYPRE_VERSION >= 21800
     PrecType prec_type = PrecType::AIR;
 #endif
@@ -202,7 +203,8 @@ int main(int argc, char *argv[])
                     "Number of times to refine the mesh uniformly in serial.");
     args.AddOption(&par_ref_levels, "-rp", "--refine-parallel",
                     "Number of times to refine the mesh uniformly in parallel.");
-
+    args.AddOption(&order, "-o", "--order",
+                    "Finite element order (polynomial degree).");
     args.Parse();
     if (!args.Good())
     {
@@ -249,11 +251,7 @@ int main(int argc, char *argv[])
         pmesh.UniformRefinement();
     }
 
-        
-
 /*
-write class for FE evolution
-
 DG weak form for linear hyperbolic advection case is same as ex5, e.g. dn/dt = -dq/dx is M dn/dt = K q + b. 
 For the coupled case, the block form would be...
 
@@ -263,5 +261,14 @@ For the coupled case, the block form would be...
 and     u = [n]
             [q]
 */
+
+    // DG FE space of the given order and mesh.
+    DG_FECollection fec(order, dim);
+
+    // finite element space for a scalar quantity (don't need vector quentity for this case?)
+    ParFiniteElementSpace fes(&pmesh, &fec);
+
+    // finite element space for all variables together (maybe not needed....)
+    ParFiniteElementSpace vfes(&pmesh, &fec, num_equation, Ordering::byNODES);
 
 }
