@@ -33,6 +33,67 @@ const int num_equations = 2;
 need to write class for DG Solver
 */
 
+class DG_Solver : public Solver
+{
+private:
+    HypreParMatrix &M, &K;
+    SparseMatrix M_diag;
+    HypreParMatrix &A;
+    GMRESSolver linear_solver;
+    double dt;
+
+public:
+    DG_solver(HypreParMatrix &M_, HypreParMatrix &K_, const FiniteElementSpace &fes)
+        : M(M_),
+          K(K_),
+          A(NULL),
+          linear_solver(M.GetComm()),
+          dt(-1.0)
+    {
+
+        int block_size = fes.GetFE(0)->GetDof();
+        
+        linear_solver.iterative_mode = false;
+        linear_solver.SetRelTol(1e-9);
+        linear_solver.SetAbsTol(0);
+        linear_solver.SetMaxIter(100);
+        linear_solver.SetPrintLevel(0);
+        
+        M.GetDiag(M_diag);
+
+    } 
+
+    void SetTimeStep(double dt_)
+    {
+        if (dt_ !=dt)
+        {
+            dt = dt_;
+            delete A;
+            SparseMatrix A_diag;
+            A->GetDIag(A_diag);
+            A_diag.Add(1.0, M_diag);
+            linear_solver.SetOperator(*A);
+
+        }
+    }
+
+    void SetOperator(const Operator &op)
+    {
+        linear_solver.SetOperator(op);
+    }
+
+    virtual void Mult(const Vector &x, Vector &y) const
+    {
+        linear_solver.Mult(x,y);
+    }
+
+    ~DG_Solver()
+    {
+        delete A;
+    }
+
+}
+
 //////// START MAIN /////////
 int main(int argc, char *argv[])
 {
@@ -102,7 +163,8 @@ int main(int argc, char *argv[])
     {
         pmesh.UniformRefinement();
     }
-    
+
+        
 
 /*
 write class for FE evolution
