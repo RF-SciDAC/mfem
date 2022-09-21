@@ -271,4 +271,15 @@ and     u = [n]
     // finite element space for all variables together (maybe not needed....)
     ParFiniteElementSpace vfes(&pmesh, &fec, num_equation, Ordering::byNODES);
 
+    HYPRE_BigInt glob_size = vfes.GlobalTrueSize();
+    if (Mpi::Root())
+    {
+        cout << "Number of unknowns: " << glob_size << endl;
+    }
+
+    // solution u has components {density, flux}
+    Array<int> offsets(num_equation + 1);
+    for (int k = 0; k <= num_equation; k++) { offsets[k] = k * vfes.GetNDofs(); }
+    BlockVector u_block(offsets);
+
 }
