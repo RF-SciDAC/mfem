@@ -52,6 +52,11 @@ int main(int argc, char *argv[])
     OptionsParser args(argc,argv);
     args.AddOption(&mesh_file, "-m", "--mesh",
                     "Mesh file to use");
+    args.AddOption(&ser_ref_levels, "-rs", "--refine-serial",
+                    "Number of times to refine the mesh uniformly in serial.");
+    args.AddOption(&par_ref_levels, "-rp", "--refine-parallel",
+                    "Number of times to refine the mesh uniformly in parallel.");
+
     args.Parse();
     if (!args.Good())
     {
@@ -65,13 +70,12 @@ int main(int argc, char *argv[])
     {
         args.PrintOptions(cout);
     } 
-
-/*
-define mesh file: can be simple uniform grid to start e.g. slab_128.mesh.
-*/
+    
+    /*
+    define mesh file: can be simple uniform grid to start e.g. slab_128.mesh.
+    */
 
     // Read mesh file
-    // Not including refinement for now but 
     Mesh mesh(mesh_file, 1, 1);
     const int dim = mesh.Dimension(); 
     /*
@@ -82,7 +86,23 @@ define mesh file: can be simple uniform grid to start e.g. slab_128.mesh.
     ??
     */
     
+    // define ode solver: start w simple backward euler.
+    ODESolver *ode_solver = new BackEulerSolver;
 
+    // refine mesh in serial
+    for (int lev = 0; lev < ser_ref_levels; lev++)
+    {
+        mesh.UniformRefinement();
+    }
+
+    // define parallel mesh.
+    ParMesh pmesh(MPI_COMM_WORLD, mesh);
+    mesh.Clear();
+    for (int lev = 0; lev < par_ref_levels; lev++)
+    {
+        pmesh.UniformRefinement();
+    }
+    
 
 /*
 write class for FE evolution
