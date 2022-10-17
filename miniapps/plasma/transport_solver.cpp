@@ -3716,7 +3716,7 @@ Operator *DGTransportTDO::NLOperator::GetGradientBlock(int i)
                {
                   MFEM_VERIFY(cgblf_[i], "");
                   const int block_size = cgblf_[i]->ParFESpace()->GetFE(0)->GetDof();
-                  D_amg_ = new LORSolver<AIR_prec>(*D_lor_, block_size);
+                  //D_amg_ = new LORSolver<AIR_prec>(*D_lor_, block_size);
                }
                else
                {
@@ -3729,7 +3729,7 @@ Operator *DGTransportTDO::NLOperator::GetGradientBlock(int i)
                {
                   MFEM_VERIFY(cgblf_[i], "");
                   const int block_size = cgblf_[i]->ParFESpace()->GetFE(0)->GetDof();
-                  D_amg_ = new AIR_prec(block_size);
+                  //D_amg_ = new AIR_prec(block_size);
                   D_amg_->SetOperator(*D_cg_);
                }
                else
