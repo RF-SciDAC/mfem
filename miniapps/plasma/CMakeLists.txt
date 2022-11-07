@@ -40,8 +40,10 @@ if (MFEM_USE_MPI)
     EXTRA_HEADERS transport_solver.hpp g_eqdsk_data.hpp plasma.hpp ${MFEM_MINIAPPS_COMMON_HEADERS}
     LIBRARIES mfem mfem-common)
 
-  add_mfem_miniapp(lin-hyp-dg
-    MAIN lin-hyp-dg.cpp
+  add_mfem_miniapp(linear_adv_diff_1d
+    MAIN linear_adv_diff_1d.cpp
+    EXTRA_SOURCES
+    EXTRA_HEADERS ${MFEM_MINIAPPS_COMMON_HEADERS}
     LIBRARIES mfem mfem-common)
 
 endif()
