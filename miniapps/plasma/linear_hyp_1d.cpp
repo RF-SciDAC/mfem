@@ -615,7 +615,9 @@ int main(int argc, char *argv[])
    double t_final = 2.0;
    double dt = -0.01;
    double cfl = 0.3;
-   bool visualization = true;
+   bool visualization = false;;
+   bool visit = false;
+   bool binary = false;
    int vis_steps = 50;
 
    int precision = 8;
@@ -643,9 +645,15 @@ int main(int argc, char *argv[])
                   "Time step. Positive number skips CFL timestep calculation.");
    args.AddOption(&cfl, "-c", "--cfl-number",
                   "CFL number for timestep calculation.");
+   args.AddOption(&visit, "-visit", "--visit-datafiles", "-no-visit",
+                  "--no-visit-datafiles",
+                  "Save data files for VisIt (visit.llnl.gov) visualisation");
    args.AddOption(&visualization, "-vis", "--visualization", "-no-vis",
                   "--no-visualization",
                   "Enable or disable GLVis visualization.");
+   args.AddOption(&binary, "-binary", "--binary-datafiles", "-ascii",
+                  "--ascii-datafiles",
+                  "Use binary (Sidre) or ascii format for VisIt data files.");
    args.AddOption(&vis_steps, "-vs", "--visualization-steps",
                   "Visualize every n-th timestep.");
 
@@ -776,13 +784,42 @@ int main(int argc, char *argv[])
    //     iterations, ti, with a time-step dt).
    FE_Evolution lin_hyp(vfes, A);
 
-   // Visualize the density
+   // Start the timer.
+   tic_toc.Clear();
+   tic_toc.Start();
+   
    socketstream nout, qout;
+   char vishost[] = "localhost";
+   int  visport   = 19916;
+
+   DataCollection *dc = NULL;
+   if (visit)
+   {
+      if (binary) 
+      {           
+#ifdef MFEM_USE_SIDRE
+         dc = new SidreDataCollection("linear_hyp_1d-Parallel", &pmesh);
+#else             
+         MFEM_ABORT("Must build with MFEM_USE_SIDRE=YES for binary output.");
+#endif
+      }
+      else  
+      {
+         dc = new VisItDataCollection("linear_hyp_1d-Parallel", &pmesh);
+         dc->SetPrecision(precision);
+         //dc->SetFormat(DataCollection::PARALLEL_FORMAT);
+      }
+      dc->RegisterField("flux", &q);
+      dc->RegisterField("density", &n);
+      dc->SetCycle(0);
+      dc->SetTime(0.0);
+      dc->Save();
+   }
+
+   // Visualize the density
+   //socketstream nout, qout;
    if (visualization)
    {
-      char vishost[] = "localhost";
-      int  visport   = 19916;
-
       MPI_Barrier(pmesh.GetComm());
       nout.open(vishost, visport);
       if (!nout)
@@ -867,9 +904,7 @@ int main(int argc, char *argv[])
       dt = hmin * cfl;
    }
 
-   // Start the timer.
-   tic_toc.Clear();
-   tic_toc.Start();
+   int cycle = 0;
 
    double t = 0.0;
    lin_hyp.SetTime(t);
@@ -939,6 +974,16 @@ int main(int argc, char *argv[])
             qout << "parallel " << Mpi::WorldSize()
                  << " " << Mpi::WorldRank() << "\n";
             qout << "solution\n" << pmesh << q << flush;
+         }
+
+         if (visit)
+         {
+            cycle++;
+            dc->RegisterField("flux", &q);
+            dc->RegisterField("density", &n);
+            dc->SetCycle(cycle);
+            dc->SetTime(t);
+            dc->Save();
          }
       }
    }
