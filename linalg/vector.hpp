@@ -269,6 +269,10 @@ public:
    /** @note If MFEM_DEBUG is enabled, bounds checking is performed. */
    inline const double &operator()(int i) const;
 
+   /// Ready only access to a range of Vector entries using () for 0-based indexing.
+   /** @note If MFEM_DEBUG is enabled, bounds checking is performed. */
+   inline const Vector operator()(int begin, int size) const;
+
    /// Dot product with a `double *` array.
    double operator*(const double *) const;
 
@@ -629,6 +633,15 @@ inline const double &Vector::operator()(int i) const
                "index [" << i << "] is out of range [0," << size << ")");
 
    return data[i];
+}
+
+inline const Vector Vector::operator()(int begin, int size) const
+{
+   MFEM_ASSERT(data && begin >= 0 && begin + size <= this->size,
+               "indices [" << begin << "," << begin + size
+                           << ") are out of range [0," << this->size << ")");
+
+   return Vector(GetData() + begin, size);
 }
 
 inline void Vector::Swap(Vector &other)
