@@ -1007,6 +1007,9 @@ int main(int argc, char *argv[])
 #ifdef MFEM_USE_SUPERLU
    ttol.prec.l_use_superlu = false;
 #endif
+#ifdef MFEM_USE_STRUMPACK
+   ttol.prec.l_use_strumpack = false;
+#endif
    ttol.prec.l_use_algebraic_D_cg = false;
    ttol.prec.l_use_lor_cg = false;
    ttol.prec.l_use_air_cg = true;
@@ -1060,6 +1063,7 @@ int main(int argc, char *argv[])
    double lim_a = 0.95;
    double lim_b = 1.05;
    double lim_max = 2.0;
+   int max_dofs = 1000000;
 
    double tol_init = 1e-5;
    double t_init = 0.0;
@@ -1149,6 +1153,8 @@ int main(int argc, char *argv[])
    args.AddOption(&amr, "-amr", "--enable-amr", "-no-amr",
                   "--disable-amr",
                   "Enable or disable adaptive mesh refinement.");
+   args.AddOption(&max_dofs, "-max-dofs", "--maximum-dofs",
+		   "Set maximum number of degrees of freedom.");
    args.AddOption(&max_elem_error, "-e", "--max-err",
                   "Maximum element error");
    args.AddOption(&hysteresis, "-y", "--hysteresis",
@@ -2277,11 +2283,11 @@ int main(int argc, char *argv[])
    }
 
    // 12. A refiner selects and refines elements based on a refinement strategy.
-   //     The strategy here is to refine elements with errors larger than a
+   //     The strategy here is to refine elements with errors lrger than a
    //     fraction of the maximum element error. Other strategies are possible.
    //     The refiner will call the given error estimator.
    ThresholdRefiner refiner(estimator);
-   refiner.SetTotalErrorFraction(0.8);
+   refiner.SetTotalErrorFraction(0.2);
    // refiner.SetTotalErrorFraction(0.0); // use purely local threshold
    refiner.SetLocalSizeLimit(loc_size_lim);
    refiner.SetGlobalSizeLimit(glb_size_lim);
@@ -2296,7 +2302,7 @@ int main(int argc, char *argv[])
    derefiner.SetThreshold(hysteresis * max_elem_error);
    derefiner.SetNCLimit(nc_limit);
 
-   const int max_dofs = 100000;
+   //const int max_dofs = 100000;
 
    // Start the timer.
    tic_toc.Clear();

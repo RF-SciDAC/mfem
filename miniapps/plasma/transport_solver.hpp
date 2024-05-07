@@ -2311,6 +2311,9 @@ private:
 #ifdef MFEM_USE_SUPERLU
       Array<SuperLURowLocMatrix*> slu_mat_;
 #endif
+#ifdef MFEM_USE_STRUMPACK
+      Array<STRUMPACKRowLocMatrix*> stp_mat_;
+#endif
       DGTransportTDO::CombinedOp & comb_op_;
 
    public:

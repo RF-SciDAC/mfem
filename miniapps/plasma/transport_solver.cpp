@@ -2385,11 +2385,17 @@ TransportLeftPrec::TransportLeftPrec(const TransPrecParams &p,
 #ifdef MFEM_USE_SUPERLU
      slu_mat_(5),
 #endif
+#ifdef MFEM_USE_STRUMPACK
+     stp_mat_(5),
+#endif
      comb_op_(combOp)
 {
    diag_prec_ = NULL;
 #ifdef MFEM_USE_SUPERLU
    slu_mat_ = NULL;
+#endif
+#ifdef MFEM_USE_STRUMPACK
+   stp_mat_ = NULL;
 #endif
 }
 
@@ -2400,6 +2406,9 @@ DGTransportTDO::TransportLeftPrec::~TransportLeftPrec()
       delete diag_prec_[i];
 #ifdef MFEM_USE_SUPERLU
       delete slu_mat_[i];
+#endif
+#ifdef MFEM_USE_STRUMPACK
+      delete stp_mat_[i];
 #endif
    }
 }
@@ -2481,7 +2490,7 @@ void DGTransportTDO::TransportLeftPrec::SetOperator(const Operator &op)
 	       strumpack->SetKrylovSolver(strumpack::KrylovSolver::DIRECT);
 	       strumpack->SetReorderingStrategy(strumpack::ReorderingStrategy::METIS);
 	       strumpack->DisableMatching();
-	       strumpack->SetOperator(*str_mat_[i]);
+	       strumpack->SetOperator(*stp_mat_[i]);
 	       strumpack->SetFromCommandLine();
                diag_prec_[i] = strumpack;
 	    }
