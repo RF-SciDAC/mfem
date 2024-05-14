@@ -1357,6 +1357,24 @@ int main(int argc, char *argv[])
       return 1;
    }
 
+   /*switch (ttol.prec.type)
+   //if (ttol.prec.type==4)
+   {
+      case 4:
+         if (!args.Good())
+         {
+            if (Mpi::WorldRank() == 0)
+            {
+               args.PrintUsage(cout);
+            }
+         return 1;
+         }
+         if (Mpi::WorldRank() == 0)
+         {
+            args.PrintOptions(cout);
+         } break;
+   }*/
+
    set_mass_defaults(plasma.m_n_amu, plasma.m_n_kg, 2.01410178);
    set_mass_defaults(plasma.m_i_amu, plasma.m_i_kg, 2.01410178);
 
