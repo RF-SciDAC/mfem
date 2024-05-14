@@ -2466,6 +2466,8 @@ void DGTransportTDO::TransportLeftPrec::SetOperator(const Operator &op)
                 (p_.type == 3 || p_.l_use_mumps))
             {
 	      MUMPSSolver * mumps = new MUMPSSolver(MPI_COMM_WORLD);
+	      mumps->SetPrintLevel(4);
+	      mumps->SetReorderingStrategy(mfem::MUMPSSolver::ReorderingStrategy::PARMETIS);
 	      mumps->SetOperator(M);
 	      diag_prec_[i] = mumps;
 	    }
@@ -2484,7 +2486,7 @@ void DGTransportTDO::TransportLeftPrec::SetOperator(const Operator &op)
                        << " diagonal block" << endl;
                }
 	       STRUMPACKSolver * strumpack =
-		  new STRUMPACKSolver(argc, argv, MPI_COMM_WORLD);
+		  new STRUMPACKSolver(MPI_COMM_WORLD);
 	       strumpack->SetPrintFactorStatistics(true);
 	       strumpack->SetPrintSolveStatistics(false);
 	       strumpack->SetKrylovSolver(strumpack::KrylovSolver::DIRECT);
