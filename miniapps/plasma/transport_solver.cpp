@@ -2466,8 +2466,8 @@ void DGTransportTDO::TransportLeftPrec::SetOperator(const Operator &op)
                 (p_.type == 3 || p_.l_use_mumps))
             {
 	      MUMPSSolver * mumps = new MUMPSSolver(MPI_COMM_WORLD);
-	      mumps->SetPrintLevel(4);
-	      mumps->SetReorderingStrategy(mfem::MUMPSSolver::ReorderingStrategy::PARMETIS);
+	      mumps->SetPrintLevel(6);
+	      mumps->SetReorderingStrategy(mfem::MUMPSSolver::ReorderingStrategy::METIS);
 	      mumps->SetOperator(M);
 	      diag_prec_[i] = mumps;
 	    }
