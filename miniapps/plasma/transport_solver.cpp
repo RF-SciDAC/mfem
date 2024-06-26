@@ -1833,7 +1833,7 @@ DGAdvectionDiffusionTDO::DGAdvectionDiffusionTDO(const DGParams & dg,
    M_solver_.SetRelTol(1e-9);
    M_solver_.SetAbsTol(0.0);
    M_solver_.SetMaxIter(100);
-   M_solver_.SetPrintLevel(0);
+   M_solver_.SetPrintLevel(3);
 }
 
 DGAdvectionDiffusionTDO::~DGAdvectionDiffusionTDO()
@@ -2466,10 +2466,61 @@ void DGTransportTDO::TransportLeftPrec::SetOperator(const Operator &op)
                 (p_.type == 3 || p_.l_use_mumps))
             {
 	      MUMPSSolver * mumps = new MUMPSSolver(MPI_COMM_WORLD);
-	      mumps->SetPrintLevel(6);
+              
+	      if (Mpi::Root)
+	      {
+	         std::cout << "Building MUMPS solver for the " << i << " diagonal block." << std::endl;
+	         //std::cout << "Entered solver for the 3 diagonal block." << std::endl;
+	      }
+
+	      mumps->SetPrintLevel(9);
 	      mumps->SetReorderingStrategy(mfem::MUMPSSolver::ReorderingStrategy::METIS);
 	      mumps->SetOperator(M);
 	      diag_prec_[i] = mumps;
+
+	      if (Mpi::Root && logging_ > 1)
+	      {	      
+                 Vector diag;
+                 M.GetDiag(diag);
+                 int rank;
+                 MPI_Comm_rank(MPI_COMM_WORLD, &rank);     
+                 std::cout << "Current process rank: " << rank << std::endl;
+ 		 if (rank == 0)
+		 {
+		    std::cout << "Printing matrix diagonal information..." << std::endl;
+		 }
+		 // Check if any value in the diagonal vector is non-zero
+                 bool has_nonzero = false;
+	         double tol = 1.0e-12;
+                 for (int ii = 0; ii < diag.Size(); ii++)
+                 {
+                    if (diag[ii] >= tol)
+                    { 
+                       has_nonzero = true;
+		       std::cout << "Nonzero value in matrix diagonal." << std::endl;
+                       std::cout << "Position: " << ii << "; Value: " << diag[ii] << std::endl;
+		       std::cout << "Found in process rank: " << rank << std::endl;
+		       break;
+                    }
+                 }
+
+	         if (rank == 0)
+	         {
+		    std::cout << "Diagonal vector size: " << diag.Size() << std::endl;
+		    if (diag.Size() < 10000)    
+		    {
+		       std::cout << "Printing diagonal elements for process rank " << rank << ": " << std::endl;
+		       diag.Print(std::cout);
+		    }else{
+			    std::cout << "Wild number of matrix elements... not printed here. Check 'diagonal.txt'." << std::endl;
+		    }
+		    std::ofstream file("diagonal.txt");
+                    diag.Print(file);
+		    //std::ofstream file("matrix.txt");
+		    M.Print("matrix.txt");
+                    file.close();
+	         }
+	      }
 	    }
 	    else
 #endif
@@ -4254,6 +4305,24 @@ NLOperator::GetPreconditioner(const TransPrecParams &pparams)
       // The operator is just a DG mass matrix so return a simple precond
       dg_precond_ = new HypreDiagScale(*Dmat_);
    }
+
+   /*Vector diag;
+   Dmat_->GetDiag(diag);
+   std::cout << "Diagonal vector size: " << diag.Size() << std::endl;
+   int rank;
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+   std::cout << "Current process rank: " << rank << std::endl;
+   std::cout.flush();
+
+   //  Print the diagonal
+   //if (rank == 0) // Ensure only one process prints if running in parallel
+   //{
+   diag.Print(std::cout);
+   //}
+   std::ofstream file("diagonal.txt");
+   diag.Print(file);
+   file.close();*/
 
    return dg_precond_;
 }
@@ -9087,6 +9156,21 @@ void DiffusionTDO::ImplicitSolve(const double dt, const Vector &x, Vector &y)
 
    this->initSolver(dt);
 
+   /*Vector diag;
+   M_->GetDiag(diag);
+   std::cout << "Diagonal vector size: " << diag.Size() << std::endl;
+   int rank;
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+ 
+   //  Print the diagonal
+   if (rank == 0) // Ensure only one process prints if running in parallel
+   {
+       diag.Print(std::cout);
+   }
+   std::ofstream file("diagonal.txt");
+   diag.Print(file);
+   file.close();*/
+
    for (int d=0; d<dim_; d++)
    {
       ParGridFunction xd(&fes_, &(x.GetData()[(d+1) * fes_.GetVSize()]));
@@ -9117,6 +9201,26 @@ void DiffusionTDO::initSolver(double dt)
          delete M_;
       }
       M_ = m_.ParallelAssemble();
+      /*if (M_!=nullptr)
+      {
+
+	 std::cout << "M_ was successfully assembled" << std::endl;
+         Vector diag;
+         M_->GetDiag(diag);
+	 std::cout << "Diagonal vector size: " << diag.Size() << std::endl;
+         int rank;
+         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+         // Print the diagonal
+         if (rank == 0) // Ensure only one process prints if running in parallel
+         {
+             diag.Print(std::cout);
+         }
+         std::ofstream file("diagonal.txt");
+         diag.Print(file);
+         file.close();
+         newM = true;
+      }*/
       newM = true;
    }
 
